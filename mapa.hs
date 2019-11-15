@@ -60,7 +60,7 @@ randompositions::StdGen -> StdGen -> Int -> Int -> [(Int,Int)]
 randompositions gen1 gen2 qtd maxrange =
     zip (take qtd (randomRs (1,maxrange) gen1)) (take qtd (randomRs (1,maxrange) gen2))
 
-adicionarbombas::[[(Int,Int)]] -> [(Int,Int)] -> Int -> Int -> [[(Int,Int)]]
+adicionarbombas::[[(Int,Int)]] -> [(Int,Int)] -> Int -> [[(Int,Int)]]
 adicionarbombas tabuleiro bombas linhaatual =
     if(length bombas > 0) then
         --ha bomba na linha atual
