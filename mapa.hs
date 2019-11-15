@@ -61,14 +61,14 @@ randompositions gen1 gen2 qtd maxrange =
     zip (take qtd (randomRs (1,maxrange) gen1)) (take qtd (randomRs (1,maxrange) gen2))
 
 adicionarbombas::[[(Int,Int)]] -> [(Int,Int)] -> Int -> Int -> [[(Int,Int)]]
-adicionarbombas tabuleiro bombas linhaatual tamanho =
+adicionarbombas tabuleiro bombas linhaatual =
     if(length bombas > 0) then
         --ha bomba na linha atual
         if(snd(head bombas) == linhaatual) then
-            adicionarbombas ([take (fst(head bombas)-1) (head tabuleiro) ++ [(9,0)] ++ drop (fst(head bombas)) (head tabuleiro)] ++ tail tabuleiro) (tail bombas) linhaatual tamanho
+            adicionarbombas ([take (fst(head bombas)-1) (head tabuleiro) ++ [(9,0)] ++ drop (fst(head bombas)) (head tabuleiro)] ++ tail tabuleiro) (tail bombas) linhaatual
         --n ha mais bombas na linha atual
         else
-            [head tabuleiro] ++ adicionarbombas (tail tabuleiro) bombas (succ linhaatual) tamanho 
+            [head tabuleiro] ++ adicionarbombas (tail tabuleiro) bombas (succ linhaatual) 
     else
         tabuleiro
 
@@ -86,7 +86,7 @@ main = do
     let qtdbombas = 3
     let bombas = sortBy compare_snd (randompositions g1 g2 qtdbombas tamanho)
     let tabvazio = novomapa tamanho
-    let tabcbomba = adicionarbombas tabvazio bombas 1 tamanho
+    let tabcbomba = adicionarbombas tabvazio bombas 1
     printmapa tabvazio tamanho
     printmapa tabcbomba tamanho
     print(bombas)
