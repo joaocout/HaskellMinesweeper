@@ -1,11 +1,16 @@
 import System.Random
 import Data.List
 
+--limpa a tela do ghci
+clear::IO()
+clear = do
+    putStr("\ESC[2J")
+
 --matriz de duplas (first, second)
 --first indica a qtd de bombas vizinhas a celula
 --sendo que, se first == 9, entao a celula eh uma bomba
 novomapa::Int -> [[(Int,Int)]]
-novomapa n = [[(0,1) | i<-[1..n]] | j<-[1..n]]
+novomapa n = [[(0,0) | i<-[1..n]] | j<-[1..n]]
 
 
 --imprime a primeira linha do mapa (coordenada)
@@ -56,10 +61,12 @@ printmapa mapa n = do
     printprimeiralinha [1..n]
     printmapa' mapa n
 
+--gera uma lista de posicoes randomicas para as bombas
 randompositions::StdGen -> StdGen -> Int -> Int -> [(Int,Int)]
 randompositions gen1 gen2 qtd maxrange =
     zip (take qtd (randomRs (1,maxrange) gen1)) (take qtd (randomRs (1,maxrange) gen2))
 
+--adiciona as bombas ao mapa
 adicionarbombas::[[(Int,Int)]] -> [(Int,Int)] -> Int -> [[(Int,Int)]]
 adicionarbombas tabuleiro bombas linhaatual =
     if(length bombas > 0) then
@@ -72,11 +79,27 @@ adicionarbombas tabuleiro bombas linhaatual =
     else
         tabuleiro
 
-
+--compara o segundo termo da dupla
 compare_snd::(Int,Int) -> (Int,Int) -> Ordering
 compare_snd a b =
     if(snd a < snd b) then LT
     else GT
+
+--loop principal do jogo, finaliza quando a flag fim é true
+game::[[(Int,Int)]] -> [(Int,Int)] -> Int -> Bool -> IO()
+game tab bombas tamanho fim = do
+    if(fim == True) then do
+        clear
+        print("fim de jogo")
+        return()
+    else do
+        clear
+        print("bombas = " ++ show(bombas))
+        printmapa tab tamanho
+        input <- getLine
+        let jogada = (read input :: (Int,Int))
+        if(elem jogada bombas) then game tab bombas tamanho True
+        else game tab bombas tamanho False
 
 main::IO()
 main = do
@@ -87,6 +110,5 @@ main = do
     let bombas = sortBy compare_snd (randompositions g1 g2 qtdbombas tamanho)
     let tabvazio = novomapa tamanho
     let tabcbomba = adicionarbombas tabvazio bombas 1
-    printmapa tabvazio tamanho
-    printmapa tabcbomba tamanho
-    print(bombas)
+    
+    game tabcbomba bombas tamanho False
