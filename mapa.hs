@@ -13,7 +13,7 @@ clear = do
 --sendo que, se first == 9, entao a celula eh uma bomba
 --second indica a visibilidade das celulas, se == 0 (coberta), se == 1 (descoberta)
 novomapa::Int -> [[(Int,Int)]]
-novomapa n = [[(0,1) | i<-[1..n]] | j<-[1..n]]
+novomapa n = [[(0,0) | i<-[1..n]] | j<-[1..n]]
 
 
 --imprime a primeira linha do mapa (coordenada)
@@ -38,7 +38,11 @@ printlinha::[(Int,Int)] -> IO()
 printlinha linha = do
     if length linha > 0 then do
         if snd (head linha) == 0 then putStr("# ")
-        else putStr(show (fst(head linha)) ++ " ")
+        else 
+            if(fst (head linha) /= 0) then
+                putStr(show (fst(head linha)) ++ " ")
+            else
+                putStr("  ")
         printlinha (tail linha)
     else
         putStr("\n")
@@ -127,32 +131,75 @@ updatemapa tab bombas tamanho linhaatual =
         [updatelinha (head tab) bombas tamanho linhaatual 1]
 
 
+--seta a celula escolhida como visivel
+setarvisivel::[[(Int,Int)]] -> (Int,Int) -> Int  -> [[(Int,Int)]]
+setarvisivel tab posicao linhaatual = do
+    let x = fst posicao
+    let y = snd posicao
+    if(linhaatual<y) then
+        [head tab] ++ setarvisivel (tail tab) posicao (succ linhaatual)
+    else if(linhaatual == y) then do
+        let aux = drop (x-1) (head tab)
+        [(take (x-1) (head tab)) ++ [(fst(head aux), 1)] ++ (tail aux)] ++ setarvisivel (tail tab) posicao (succ linhaatual)
+    else tab
+
+
+--conta quantas celulas ainda nao foram reveladas na linha
+contarnaoreveladoslinha::[(Int,Int)] -> Int
+contarnaoreveladoslinha linha =
+     length (filter (==0) (map snd linha))
+
+
+--conta quantas celulas ainda nao foram reveladas no mapa
+contarnaorevelados::[[(Int,Int)]] -> Int
+contarnaorevelados tab = 
+    if (length tab > 1) then
+        contarnaoreveladoslinha (head tab) + contarnaorevelados (tail tab)
+    else
+        contarnaoreveladoslinha (head tab)
+
+
 --loop principal do jogo, finaliza quando a flag fim é true
-game::[[(Int,Int)]] -> [(Int,Int)] -> Int -> Bool -> IO()
-game tab bombas tamanho fim = do
+game::[[(Int,Int)]] -> [(Int,Int)] -> Int -> Bool -> Bool -> IO()
+game tab bombas tamanho fim vitoria = do
     if(fim == True) then do
         clear
         print("fim de jogo")
+        if(vitoria == True) then do
+            print("vc venceu")
+        else do
+            print("vc perdeu")
         return()
     else do
-        clear
-        print("bombas = " ++ show(bombas))
-        printmapa tab tamanho
-        input <- getLine
-        let jogada = (read input :: (Int,Int))
-        if(elem jogada bombas) then game tab bombas tamanho True
-        else game tab bombas tamanho False
+        --verifica se todas as celulas que n sao bombas ja foram descobertas
+        --se sim, vitoria
+        if(contarnaorevelados tab == length bombas) then
+            game tab bombas tamanho True True
+        else do
+            clear
+            print("bombas = " ++ show(bombas))
+            print(contarnaorevelados tab)
+            printmapa tab tamanho
+            input <- getLine
+            let jogada = (read input :: (Int,Int))
+
+            --se o player escolheu uma posicao de bomba, derrota
+            if(elem jogada bombas) then
+                game tab bombas tamanho True False
+            
+            --se nao, o jogo continua
+            else
+                game (setarvisivel tab jogada 1) bombas tamanho False False
 
 
 main::IO()
 main = do
     g1 <- newStdGen
     g2 <- newStdGen
-    let tamanho = 10
-    let qtdbombas = 3
+    let tamanho = 3
+    let qtdbombas = 1
     let bombas = sortBy compare_snd (randompositions g1 g2 qtdbombas tamanho)
     let tabvazio = novomapa tamanho
     let tabcbomba = adicionarbombas tabvazio bombas 1
     let tab = updatemapa tabcbomba bombas tamanho 1
-    print(bombas)
-    printmapa tab tamanho
+    game tab bombas tamanho False False
