@@ -221,7 +221,7 @@ main = do
     g1 <- newStdGen
     g2 <- newStdGen
     let tamanho = 20
-    let qtdbombas = 6
+    let qtdbombas = 40
     let bombas = sortBy compare_snd (randompositions g1 g2 qtdbombas tamanho)
     let tabvazio = novomapa tamanho
     let tabcbomba = adicionarbombas tabvazio bombas 1
