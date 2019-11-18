@@ -1,4 +1,4 @@
 all:
-	ghc mapa.hs -o mapa
+	ghc mines.hs -o mines
 clear:
-	rm mapa & rm mapa.hi &	rm mapa.o
+	rm mines & rm mines.hi & rm mines.o

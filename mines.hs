@@ -132,16 +132,19 @@ updatemapa tab bombas tamanho linhaatual =
 
 
 --seta a celula escolhida como visivel
-setarvisivel::[[(Int,Int)]] -> (Int,Int) -> Int  -> [[(Int,Int)]]
-setarvisivel tab posicao linhaatual = do
+setarvisivel::[[(Int,Int)]] -> (Int,Int) -> [(Int,Int)] -> Int -> [[(Int,Int)]]
+setarvisivel tab posicao vizinhos tamanho = do
     let x = fst posicao
     let y = snd posicao
-    if(linhaatual<y) then
-        [head tab] ++ setarvisivel (tail tab) posicao (succ linhaatual)
-    else if(linhaatual == y) then do
-        let aux = drop (x-1) (head tab)
-        [(take (x-1) (head tab)) ++ [(fst(head aux), 1)] ++ (tail aux)] ++ setarvisivel (tail tab) posicao (succ linhaatual)
-    else tab
+    let linha = last  (take y tab)
+    let aux = drop (x-1) linha
+    let newtab = take (y-1) tab ++ [(take (x-1) linha) ++ [(fst(head aux), 1)] ++ (tail aux)] ++ drop y tab
+
+    if(fst (tab !! (y-1) !! (x-1)) == 0 && snd (tab !! (y-1) !! (x-1)) == 0) then do newtab
+        --let newvizinhos = getvizinhos newtab (head vizinhos) tamanho
+        --setarvisivel newtab (head vizinhos) (union (tail(vizinhos)) newvizinhos) tamanho
+    else
+        newtab
 
 
 --conta quantas celulas ainda nao foram reveladas na linha
@@ -158,6 +161,28 @@ contarnaorevelados tab =
     else
         contarnaoreveladoslinha (head tab)
 
+
+--checa se uma posicao nao foi descoberta
+posicaovalida2::[[(Int,Int)]] -> (Int,Int) -> Bool
+posicaovalida2 tab xy = do
+    let x = fst xy
+    let y = snd xy
+    snd(tab !! (y-1) !! (x-1)) == 0 
+
+--checa se uma posicao esta nos limites do mapa
+posicaovalida::Int -> (Int,Int) -> Bool
+posicaovalida tamanho xy = do
+    let x = fst xy
+    let y = snd xy
+    x >=1 && y>=1 && x<=tamanho && y<=tamanho
+
+--retorna os vizinhos nao descobertos de uma celula
+getvizinhos::[[(Int,Int)]] -> (Int,Int) -> Int -> [(Int,Int)]
+getvizinhos tab posicao tamanho = do
+    let x = fst posicao
+    let y = snd posicao
+    let v = [(x+1,y+1), (x+1,y-1), (x+1, y), (x-1,y+1), (x-1,y-1), (x-1, y), (x, y+1), (x, y-1)]
+    filter (posicaovalida tamanho) v
 
 --loop principal do jogo, finaliza quando a flag fim é true
 game::[[(Int,Int)]] -> [(Int,Int)] -> Int -> Bool -> Bool -> IO()
@@ -177,8 +202,7 @@ game tab bombas tamanho fim vitoria = do
             game tab bombas tamanho True True
         else do
             clear
-            print("bombas = " ++ show(bombas))
-            print(contarnaorevelados tab)
+            print ("bombas = " ++ show(bombas))
             printmapa tab tamanho
             input <- getLine
             let jogada = (read input :: (Int,Int))
@@ -188,16 +212,16 @@ game tab bombas tamanho fim vitoria = do
                 game tab bombas tamanho True False
             
             --se nao, o jogo continua
-            else
-                game (setarvisivel tab jogada 1) bombas tamanho False False
+            else do 
+                game (setarvisivel tab jogada (getvizinhos tab jogada tamanho) tamanho) bombas tamanho False False
 
 
 main::IO()
 main = do
     g1 <- newStdGen
     g2 <- newStdGen
-    let tamanho = 3
-    let qtdbombas = 1
+    let tamanho = 20
+    let qtdbombas = 6
     let bombas = sortBy compare_snd (randompositions g1 g2 qtdbombas tamanho)
     let tabvazio = novomapa tamanho
     let tabcbomba = adicionarbombas tabvazio bombas 1
